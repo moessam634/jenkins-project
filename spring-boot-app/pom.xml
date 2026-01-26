@@ -53,7 +53,7 @@
 
     <build>
 
-        <finalName>spring-boot-web</finalName>
+        
 
         <plugins>
             <plugin>
