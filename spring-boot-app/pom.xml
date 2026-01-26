@@ -77,15 +77,14 @@
          Replace <NEXUS_HOST> with your Nexus host (including port if applicable). -->
     <distributionManagement>
         <repository>
-            <id>nexus-releases</id>
-            <name>Nexus Releases</name>
-            <url>https://&lt;NEXUS_HOST&gt;:8081/repository/maven-releases/</url>
+            <id>jenkins-ci</id>
+            <name>jenkins-ci</name>
+            <url>http://192.168.10.128:8081/repository/Release/</url>
         </repository>
         <snapshotRepository>
             <id>nexus-snapshots</id>
-            <name>Nexus Snapshots</name>
-            <url>https://&lt;NEXUS_HOST&gt;:8081/repository/maven-snapshots/</url>
+            <name>Snapshots</name>
+            <url>http://192.168.10.128:8081/repository/Snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
-
 </project>
