@@ -11,11 +11,11 @@
 
 # This should not be changed
 #ENTRYPOINT ["java","-jar","app.jar"]
-FROM openjdk:11-jre-slim
+FROM openjdk:11-slim
 WORKDIR /app
 
-# Copy the JAR file into the image
+# Copy the JAR file generated from Maven
 COPY target/spring-boot-demo-1.0-SNAPSHOT.jar app.jar
 
-# Run the app
+# Run the application
 CMD ["java", "-jar", "app.jar"]
