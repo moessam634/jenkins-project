@@ -1,63 +1,142 @@
-# Jenkins Pipeline for Java based application using Maven, SonarQube, Argo CD, Helm and Kubernetes
+# Spring Boot CI/CD Pipeline with Jenkins, Docker, SonarQube, Trivy, and ArgoCD (Kubernetes on EC2)
 
-![](https://user-images.githubusercontent.com/43399466/228301952-abc02ca2-9942-4a67-8293-f76647b6f9d8.png)
+This project demonstrates an end-to-end CI/CD pipeline for a Java Spring Boot application using Jenkins, Docker, SonarQube for code quality, Trivy for vulnerability scanning, and ArgoCD for GitOps deployment to a Kubernetes cluster on AWS EC2.
 
-Here are the step-by-step details to set up an **end-to-end Jenkins pipeline for a Java application using SonarQube, Argo CD, Helm, and Kubernetes:**
+---
 
-**Prerequisites:**
+## **Architecture Overview**
 
-- Java application code hosted on a Git repository
-- Jenkins server
-- Kubernetes cluster
-- Helm package manager
-- Argo CD
+- **Source Code:** GitHub (branch: `my-changes`)
+- **CI/CD:** Jenkins (pipeline as code)
+- **Build & Test:** Maven
+- **Image Build & Push:** Docker + DockerHub
+- **Code Quality:** SonarQube
+- **Image Security:** Trivy
+- **GitOps Deployment:** Kubernetes (K3s/K8s on EC2) + Argo CD
+- **CD Trigger:** Jenkins calls ArgoCD API
 
-**Steps:**
+---
 
-    1. Install the necessary Jenkins plugins:
-       1.1 Git plugin
-       1.2 Maven Integration plugin
-       1.3 Pipeline plugin
-       1.4 Kubernetes Continuous Deploy plugin
+## **Prerequisites**
 
-    2. Create a new Jenkins pipeline:
-       2.1 In Jenkins, create a new pipeline job and configure it with the Git repository URL for the Java application.
-       2.2 Add a Jenkinsfile to the Git repository to define the pipeline stages.
+- AWS EC2 instance running Ubuntu, with security group allowing NodePort + SSH + HTTP.
+- K3s/Kubernetes cluster running on EC2.
+- Jenkins server (outside or on EC2).
+- DockerHub account (for pushing images).
+- SonarQube server, Trivy for scanning.
+- [ArgoCD](https://argo-cd.readthedocs.io/en/stable/) installed in cluster.
+- Image credentials and GitHub PAT stored as Jenkins credentials.
+- NodePort for ArgoCD opened in EC2 security group.
 
-    3. Define the pipeline stages:
-        Stage 1: Checkout the source code from Git.
-        Stage 2: Build the Java application using Maven.
-        Stage 3: Run unit tests using JUnit and Mockito.
-        Stage 4: Run SonarQube analysis to check the code quality.
-        Stage 5: Package the application into a JAR file.
-        Stage 6: Deploy the application to a test environment using Helm.
-        Stage 7: Run user acceptance tests on the deployed application.
-        Stage 8: Promote the application to a production environment using Argo CD.
+---
 
-    4. Configure Jenkins pipeline stages:
-        Stage 1: Use the Git plugin to check out the source code from the Git repository.
-        Stage 2: Use the Maven Integration plugin to build the Java application.
-        Stage 3: Use the JUnit and Mockito plugins to run unit tests.
-        Stage 4: Use the SonarQube plugin to analyze the code quality of the Java application.
-        Stage 5: Use the Maven Integration plugin to package the application into a JAR file.
-        Stage 6: Use the Kubernetes Continuous Deploy plugin to deploy the application to a test environment using Helm.
-        Stage 7: Use a testing framework like Selenium to run user acceptance tests on the deployed application.
-        Stage 8: Use Argo CD to promote the application to a production environment.
+## **Pipeline Steps**
 
-    5. Set up Argo CD:
-        Install Argo CD on the Kubernetes cluster.
-        Set up a Git repository for Argo CD to track the changes in the Helm charts and Kubernetes manifests.
-        Create a Helm chart for the Java application that includes the Kubernetes manifests and Helm values.
-        Add the Helm chart to the Git repository that Argo CD is tracking.
+### 1. **Code Checkout**
+- Jenkins checks out the `my-changes` branch from GitHub.
 
-    6. Configure Jenkins pipeline to integrate with Argo CD:
-       6.1 Add the Argo CD API token to Jenkins credentials.
-       6.2 Update the Jenkins pipeline to include the Argo CD deployment stage.
+### 2. **Build Application**
+- Maven builds the Spring Boot application.
 
-    7. Run the Jenkins pipeline:
-       7.1 Trigger the Jenkins pipeline to start the CI/CD process for the Java application.
-       7.2 Monitor the pipeline stages and fix any issues that arise.
+### 3. **Run Unit Tests**
+- Maven runs the unit tests.
 
-This end-to-end Jenkins pipeline will automate the entire CI/CD process for a Java application, from code checkout to production deployment, using popular tools like SonarQube, Argo CD, Helm, and Kubernetes.
+### 4. **SonarQube Analysis**
+- Jenkins sends code to SonarQube for static code analysis.
 
-# Jenkins-full-project
+### 5. **Build Docker Image**
+- Jenkins builds a Docker image tagged with the Jenkins build number.
+
+### 6. **Trivy Image Scan** *(optional/disabled in sample pipeline)*
+- Trivy scans the image for security vulnerabilities and archives the report.
+
+### 7. **Push Docker Image**
+- Jenkins pushes both the build tag and the `latest` tag to DockerHub.
+
+### 8. **User Acceptance Testing**
+- Jenkins runs acceptance tests if present in the Maven profile.
+
+### 9. **Update Kubernetes Manifest**
+- The image tag in the Kubernetes manifest YAML is updated using `sed`, committed, and pushed to GitHub using a PAT.
+
+### 10. **Promote with Argo CD**
+- Jenkins triggers Argo CD Sync via its API by calling the NodePort endpoint with an API token from Jenkins credentials.
+
+---
+
+## **ArgoCD API NodePort**
+
+- ArgoCD server is exposed as a NodePort (`kubectl edit svc argocd-server -n argocd`).
+- Find the port with `kubectl get svc -n argocd`.
+- Jenkins pipeline calls `http://<EC2_PUBLIC_IP>:<NODEPORT>/api/v1/applications/<app-name>/sync`.
+
+---
+
+## **Credentials Setup**
+
+- **DockerHub:** Set as Jenkins "Username with password".
+- **GitHub:** Personal Access Token as "Username with password" (`github-creds`).
+- **ArgoCD:** API token as Jenkins "Secret text" (`argoCD-creds`).
+- Adjust the credentialsId in the Jenkinsfile as appropriate.
+
+---
+
+## **Security Group Setup (AWS EC2)**
+
+- Open inbound SSH (port 22) from your IP.
+- Open any NodePort you assign to ArgoCD from your Jenkins server (can use 0.0.0.0/0 for testing—**not recommended for prod**).
+- Open 8080 or other ports for web UI as desired.
+
+---
+
+## **How to Run the Pipeline**
+
+1. **Set up all prerequisite services and credentials in Jenkins.**
+2. **Expose ArgoCD NodePort** and note your EC2 public IP/port.
+3. **Configure DockerHub, GitHub, and ArgoCD credentials in Jenkins.**
+4. **Run the pipeline.**  
+   - On successful build, Jenkins updates the manifest and then triggers ArgoCD via the NodePort endpoint.
+5. **Access your application or the ArgoCD UI from your public EC2 endpoint.**
+
+---
+
+## **Troubleshooting**
+
+- **Jenkins cannot reach ArgoCD:** Check NodePort/Firewall setup.
+- **Cannot SSH/port-forward:** Verify EC2 security group, check inbound rules.
+- **API refuses connection:** Double-check credentials, URLs, and that ArgoCD server is Running.
+- **Localhost issues:** Remember that localhost in a port-forward is local to *that* machine only—use public EC2 IP for remote Jenkins.
+
+---
+
+## **Visual Guide**
+
+For every step, reference the matching screenshot (`step-N.png`) for your deployment!
+
+1. **EC2 setup** ![EC2 Security Group](step-1.png)
+2. **Kubernetes & Argo CD installation** ![ArgoCD Install](step-2.png)
+3. **Expose NodePort & verify** ![NodePort Setup](step-3.png)
+4. **Jenkins Pipeline run** ![Jenkins Pipeline](step-4.png)
+5. **Jenkins triggers ArgoCD** ![ArgoCD Sync API Trigger](step-5.png)
+6. **ArgoCD UI deployment status update** ![ArgoCD UI](step-6.png)
+7. **Application running** ![Deployed App](step-7.png)
+
+_(Add your screenshots as you progress!)_
+
+---
+
+## **References**
+
+- [Argo CD API Docs](https://argo-cd.readthedocs.io/en/stable/operator-manual/api/)
+- [Jenkins Pipeline Syntax](https://www.jenkins.io/doc/book/pipeline/syntax/)
+- [Kubernetes Services](https://kubernetes.io/docs/concepts/services-networking/service/)
+
+---
+
+## **Author**
+
+- **moessam634** (and your collaborators!)
+
+---
+
+**Happy DevOps!**
