@@ -7,7 +7,7 @@ FROM adoptopenjdk/openjdk11:alpine-jre
 WORKDIR /opt/app
 
 #COPY ${artifact} app.jar
-copy target/spring-boot-demo-1.0-SNAPSHOT.jar app.jar
+COPY target/spring-boot-demo-1.0-SNAPSHOT.jar app.jar
 # This should not be changed
 ENTRYPOINT ["java","-jar","app.jar"]
 #FROM openjdk:11-slim
