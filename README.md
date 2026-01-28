@@ -110,19 +110,26 @@ This project demonstrates an end-to-end CI/CD pipeline for a Java Spring Boot ap
 - **Localhost issues:** Remember that localhost in a port-forward is local to *that* machine only—use public EC2 IP for remote Jenkins.
 
 ---
-
 ## **Visual Guide**
 
-_Add a clear image for each of these solutions as you build your system:_
+**SonarQube**
+![SonarQube](images/sonar-qube.png)
 
-- **SonarQube**           ![SonarQube](sonarqube.png)
-- **Nexus Repository**    ![Nexus](nexus.png)
-- **Docker Hub**          ![Docker Hub](dockerhub.png)
-- **Argo CD**             ![Argo CD](argocd.png)
-- **Jenkins / Blue Ocean**![Blue Ocean](blueocean.png)
-- **Application UI**      ![Application UI](appui.png)
+**Nexus Repository**
+![Nexus Repository](images/nexus-artifact.png)
 
----
+**DockerHub**
+![DockerHub Repository](images/docker-hub.png)
+
+**Argo CD**
+![Argo CD Dashboard 1](images/argocd1.png)
+![Argo CD Dashboard 2](images/argocd2.png)
+
+**Jenkins / Blue Ocean**
+![Jenkins Blue Ocean](images/blue-ocean.png)
+
+**Application UI**
+![Application UI](images/app.png)
 
 ## **References**
 
